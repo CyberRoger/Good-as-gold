@@ -8,32 +8,32 @@
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
+            margin: 10px auto;
+            padding: 10px;
             text-align: center;
         }
         .warning {
             background-color: #ffe6e6;
             border: 2px solid #ff3333;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9em; /* Smaller font */
             color: #333;
         }
         .section {
-            margin: 20px 0;
-            padding: 20px;
+            margin: 10px 0;
+            padding: 15px; /* Added whitespace inside grey border */
             border: 1px solid #ddd;
             border-radius: 8px;
         }
         .price {
-            font-size: 2em;
+            font-size: 1.8em; /* Slightly smaller for compactness */
             font-weight: bold;
-            margin: 20px 0;
+            margin: 10px 0;
         }
         .indicator {
-            font-size: 1.5em;
-            margin: 10px 0;
+            font-size: 1.3em; /* Slightly smaller */
+            margin: 8px 0;
         }
         .up {
             color: green;
@@ -45,21 +45,21 @@
             color: gray;
         }
         button {
-            padding: 10px 20px;
-            font-size: 1em;
+            padding: 8px 16px;
+            font-size: 0.9em;
             cursor: pointer;
         }
         .last-updated {
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: #555;
         }
         .debug {
-            font-size: 0.8em;
+            font-size: 0.7em;
             color: #777;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         .note {
-            font-size: 0.8em;
+            font-size: 0.7em;
             color: #777;
         }
     </style>
@@ -108,7 +108,6 @@
         }
 
         function fetchSpotPrice() {
-            // Fetch current price from livepriceofgold.com
             fetch('https://api.allorigins.win/raw?url=https://www.livepriceofgold.com/nz-gold-price.html')
                 .then(response => response.text())
                 .then(currentHtml => {
@@ -129,17 +128,16 @@
                         }
                     }
 
-                    // Fetch previous close (yesterday's data for calculation)
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
-                    const yesterdayStr = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
+                    const yesterdayStr = yesterday.toISOString().split('T')[0];
                     fetch('https://api.allorigins.win/raw?url=https://www.livepriceofgold.com/gold-price-history.html?date=' + yesterdayStr)
                         .then(response => response.text())
                         .then(yesterdayHtml => {
                             const yesterdayParser = new DOMParser();
                             const yesterdayDoc = yesterdayParser.parseFromString(yesterdayHtml, 'text/html');
 
-                            let previousClose = currentPrice - 32.52; // Fallback (calculate +0.50%)
+                            let previousClose = currentPrice - 32.52; // Fallback
                             const prevSelectors = ['.price-value', '.spot-price', 'h2', 'h3', 'td', 'span'];
                             for (let selector of prevSelectors) {
                                 const elements = yesterdayDoc.querySelectorAll(selector);
@@ -181,8 +179,7 @@
                             document.getElementById('spot-debug').textContent = 'Data source: Live calculation successful';
                         })
                         .catch(error => {
-                            // Fallback if yesterday fetch fails
-                            const previousClose = 6472.13; // Adjusted for +0.50%
+                            const previousClose = 6472.13;
                             let change = currentPrice - previousClose;
                             let changePct = (change / previousClose) * 100;
                             document.getElementById('spot-price').textContent = `NZD $${currentPrice.toFixed(2)}`;
@@ -195,7 +192,6 @@
                         });
                 })
                 .catch(error => {
-                    // Fallback for current fetch
                     const currentPrice = 6504.65;
                     const previousClose = 6472.13;
                     let change = currentPrice - previousClose;
@@ -211,14 +207,13 @@
         }
 
         function fetchEtfPrice() {
-            // Unchanged ETF logic (working)
             fetch('https://api.allorigins.win/raw?url=https://nz.finance.yahoo.com/quote/GLD.NZ')
                 .then(response => response.text())
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
 
-                    let currentPrice = 3.527; // Fallback (Sep 27, 2025)
+                    let currentPrice = 3.527;
                     let foundLive = false;
                     const priceSelectors = ['fin-streamer[data-field="regularMarketPrice"]', '.Fw\\(b\\)', '.price', '[data-reactid]', 'span', 'h2', 'h3', '.value', '.last-price', '.symbol-price'];
                     for (let selector of priceSelectors) {
@@ -235,7 +230,7 @@
                         if (foundLive) break;
                     }
 
-                    let change = 0.043; // Fallback
+                    let change = 0.043;
                     const changeSelectors = ['fin-streamer[data-field="regularMarketChange"]', '.Fz\\(36px\\)', '.change', '[data-reactid]', 'span', '.delta'];
                     for (let selector of changeSelectors) {
                         const elements = doc.querySelectorAll(selector);
@@ -253,7 +248,7 @@
                         if (Math.abs(change) < 0.5) break;
                     }
 
-                    let changePct = 1.23; // Fallback
+                    let changePct = 1.23;
                     const pctSelectors = ['fin-streamer[data-field="regularMarketChangePercent"]', '.change', '[data-reactid]', 'span', '.pct-change'];
                     for (let selector of pctSelectors) {
                         const elements = doc.querySelectorAll(selector);
