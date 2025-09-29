@@ -108,14 +108,14 @@
         }
 
         function fetchSpotPrice() {
-            fetch('https://api.allorigins.win/raw?url=https://www.livepriceofgold.com/nz-gold-price.html')
+            fetch('https://cors-anywhere.herokuapp.com/https://www.livepriceofgold.com/nz-gold-price.html')
                 .then(response => response.text())
                 .then(currentHtml => {
                     const currentParser = new DOMParser();
                     const currentDoc = currentParser.parseFromString(currentHtml, 'text/html');
 
                     let currentPrice = null;
-                    const priceSelectors = ['.price-value', '.spot-price', '.gold-price', 'h2', 'h3', 'td', 'span', '.current-price', '[data-price]'];
+                    const priceSelectors = ['.price-value', '.spot-price', '.gold-price', 'h2', 'h3', 'td', 'span', '.current-price', '[data-price]', '.goldprice'];
                     for (let selector of priceSelectors) {
                         const elements = currentDoc.querySelectorAll(selector);
                         for (let el of elements) {
@@ -140,14 +140,14 @@
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
                     const yesterdayStr = yesterday.toISOString().split('T')[0];
-                    fetch('https://api.allorigins.win/raw?url=https://www.livepriceofgold.com/gold-price-history.html?date=' + yesterdayStr)
+                    fetch('https://cors-anywhere.herokuapp.com/https://www.livepriceofgold.com/gold-price-history.html?date=' + yesterdayStr)
                         .then(response => response.text())
                         .then(yesterdayHtml => {
                             const yesterdayParser = new DOMParser();
                             const yesterdayDoc = yesterdayParser.parseFromString(yesterdayHtml, 'text/html');
 
                             let previousClose = null;
-                            const prevSelectors = ['.price-value', '.spot-price', 'h2', 'h3', 'td', 'span', '.current-price', '[data-price]'];
+                            const prevSelectors = ['.price-value', '.spot-price', 'h2', 'h3', 'td', 'span', '.current-price', '[data-price]', '.goldprice'];
                             for (let selector of prevSelectors) {
                                 const elements = yesterdayDoc.querySelectorAll(selector);
                                 for (let el of elements) {
@@ -217,7 +217,7 @@
         }
 
         function fetchEtfPrice() {
-            fetch('https://api.allorigins.win/raw?url=https://nz.finance.yahoo.com/quote/GLD.NZ')
+            fetch('https://cors-anywhere.herokuapp.com/https://nz.finance.yahoo.com/quote/GLD.NZ')
                 .then(response => response.text())
                 .then(html => {
                     const parser = new DOMParser();
@@ -235,7 +235,8 @@
                         'h3',
                         '.value',
                         '.last-price',
-                        '.symbol-price'
+                        '.symbol-price',
+                        '[data-symbol="GLD.NZ"]'
                     ];
                     for (let selector of priceSelectors) {
                         const elements = doc.querySelectorAll(selector);
