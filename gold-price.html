@@ -17,22 +17,22 @@
             border: 2px solid #ff3333;
             padding: 10px;
             margin-bottom: 10px;
-            font-size: 0.9em; /* Smaller font */
+            font-size: 0.9em;
             color: #333;
         }
         .section {
             margin: 10px 0;
-            padding: 15px; /* Added whitespace inside grey border */
+            padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
         }
         .price {
-            font-size: 1.8em; /* Slightly smaller for compactness */
+            font-size: 1.8em;
             font-weight: bold;
             margin: 10px 0;
         }
         .indicator {
-            font-size: 1.3em; /* Slightly smaller */
+            font-size: 1.3em;
             margin: 8px 0;
         }
         .up {
@@ -114,8 +114,8 @@
                     const currentParser = new DOMParser();
                     const currentDoc = currentParser.parseFromString(currentHtml, 'text/html');
 
-                    let currentPrice = 6504.65; // Fallback (Sep 27, 2025)
-                    const priceSelectors = ['.price-value', '.spot-price', '.gold-price', 'h2', 'h3', 'td', 'span'];
+                    let currentPrice = null;
+                    const priceSelectors = ['.price-value', '.spot-price', '.gold-price', 'h2', 'h3', 'td', 'span', '.current-price', '[data-price]'];
                     for (let selector of priceSelectors) {
                         const elements = currentDoc.querySelectorAll(selector);
                         for (let el of elements) {
@@ -126,6 +126,15 @@
                                 break;
                             }
                         }
+                        if (currentPrice) break;
+                    }
+
+                    if (!currentPrice) {
+                        document.getElementById('spot-price').textContent = 'Data not currently available';
+                        document.getElementById('spot-indicator').textContent = '';
+                        document.getElementById('spot-last-updated').textContent = `Last updated: ${getNZTime()}`;
+                        document.getElementById('spot-debug').textContent = 'Data source: Fetch failed (check livepriceofgold.com)';
+                        return;
                     }
 
                     const yesterday = new Date();
@@ -137,8 +146,8 @@
                             const yesterdayParser = new DOMParser();
                             const yesterdayDoc = yesterdayParser.parseFromString(yesterdayHtml, 'text/html');
 
-                            let previousClose = currentPrice - 32.52; // Fallback
-                            const prevSelectors = ['.price-value', '.spot-price', 'h2', 'h3', 'td', 'span'];
+                            let previousClose = null;
+                            const prevSelectors = ['.price-value', '.spot-price', 'h2', 'h3', 'td', 'span', '.current-price', '[data-price]'];
                             for (let selector of prevSelectors) {
                                 const elements = yesterdayDoc.querySelectorAll(selector);
                                 for (let el of elements) {
@@ -149,14 +158,26 @@
                                         break;
                                     }
                                 }
+                                if (previousClose) break;
+                            }
+
+                            if (!previousClose) {
+                                document.getElementById('spot-price').textContent = 'Data not currently available';
+                                document.getElementById('spot-indicator').textContent = '';
+                                document.getElementById('spot-last-updated').textContent = `Last updated: ${getNZTime()}`;
+                                document.getElementById('spot-debug').textContent = 'Data source: Fetch failed (check livepriceofgold.com history)';
+                                return;
                             }
 
                             let change = currentPrice - previousClose;
                             let changePct = (change / previousClose) * 100;
 
                             if (Math.abs(changePct) > 5) {
-                                change = 32.52;
-                                changePct = 0.50;
+                                document.getElementById('spot-price').textContent = 'Data not currently available';
+                                document.getElementById('spot-indicator').textContent = '';
+                                document.getElementById('spot-last-updated').textContent = `Last updated: ${getNZTime()}`;
+                                document.getElementById('spot-debug').textContent = 'Data source: Invalid change detected';
+                                return;
                             }
 
                             if (isNewDayNZ() || spotPreviousClose === null) {
@@ -179,29 +200,18 @@
                             document.getElementById('spot-debug').textContent = 'Data source: Live calculation successful';
                         })
                         .catch(error => {
-                            const previousClose = 6472.13;
-                            let change = currentPrice - previousClose;
-                            let changePct = (change / previousClose) * 100;
-                            document.getElementById('spot-price').textContent = `NZD $${currentPrice.toFixed(2)}`;
-                            const spotIndicator = document.getElementById('spot-indicator');
-                            spotIndicator.innerHTML = `↑ +NZD $${change.toFixed(2)} (+${changePct.toFixed(2)}%)`;
-                            spotIndicator.className = 'indicator up';
+                            document.getElementById('spot-price').textContent = 'Data not currently available';
+                            document.getElementById('spot-indicator').textContent = '';
                             document.getElementById('spot-last-updated').textContent = `Last updated: ${getNZTime()}`;
-                            document.getElementById('spot-debug').textContent = 'Data source: Fallback calculation';
+                            document.getElementById('spot-debug').textContent = 'Data source: Fetch failed (check livepriceofgold.com history)';
                             console.error('Error fetching yesterday data:', error);
                         });
                 })
                 .catch(error => {
-                    const currentPrice = 6504.65;
-                    const previousClose = 6472.13;
-                    let change = currentPrice - previousClose;
-                    let changePct = (change / previousClose) * 100;
-                    document.getElementById('spot-price').textContent = `NZD $${currentPrice.toFixed(2)}`;
-                    const spotIndicator = document.getElementById('spot-indicator');
-                    spotIndicator.innerHTML = `↑ +NZD $${change.toFixed(2)} (+${changePct.toFixed(2)}%)`;
-                    spotIndicator.className = 'indicator up';
+                    document.getElementById('spot-price').textContent = 'Data not currently available';
+                    document.getElementById('spot-indicator').textContent = '';
                     document.getElementById('spot-last-updated').textContent = `Last updated: ${getNZTime()}`;
-                    document.getElementById('spot-debug').textContent = 'Data source: Fallback calculation';
+                    document.getElementById('spot-debug').textContent = 'Data source: Fetch failed (check livepriceofgold.com)';
                     console.error('Error fetching current price:', error);
                 });
         }
@@ -213,9 +223,20 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
 
-                    let currentPrice = 3.527;
-                    let foundLive = false;
-                    const priceSelectors = ['fin-streamer[data-field="regularMarketPrice"]', '.Fw\\(b\\)', '.price', '[data-reactid]', 'span', 'h2', 'h3', '.value', '.last-price', '.symbol-price'];
+                    let currentPrice = null;
+                    const priceSelectors = [
+                        'fin-streamer[data-field="regularMarketPrice"]',
+                        '[data-test="qsp-price"]',
+                        '.Fw\\(b\\)',
+                        '.price',
+                        '[data-reactid]',
+                        'span',
+                        'h2',
+                        'h3',
+                        '.value',
+                        '.last-price',
+                        '.symbol-price'
+                    ];
                     for (let selector of priceSelectors) {
                         const elements = doc.querySelectorAll(selector);
                         for (let el of elements) {
@@ -223,38 +244,60 @@
                             const price = parseFloat(text);
                             if (price > 2 && price < 5) {
                                 currentPrice = price;
-                                foundLive = true;
                                 break;
                             }
                         }
-                        if (foundLive) break;
+                        if (currentPrice) break;
                     }
 
-                    let change = 0.043;
-                    const changeSelectors = ['fin-streamer[data-field="regularMarketChange"]', '.Fz\\(36px\\)', '.change', '[data-reactid]', 'span', '.delta'];
+                    if (!currentPrice) {
+                        document.getElementById('etf-price').textContent = 'Data not currently available';
+                        document.getElementById('etf-indicator').textContent = '';
+                        document.getElementById('etf-last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
+                        document.getElementById('etf-debug').textContent = 'Data source: Fetch failed (check nz.finance.yahoo.com)';
+                        return;
+                    }
+
+                    let change = null;
+                    const changeSelectors = [
+                        'fin-streamer[data-field="regularMarketChange"]',
+                        '[data-test="qsp-price-change"]',
+                        '.Fz\\(36px\\)',
+                        '.change',
+                        '[data-reactid]',
+                        'span',
+                        '.delta'
+                    ];
                     for (let selector of changeSelectors) {
                         const elements = doc.querySelectorAll(selector);
                         for (let el of elements) {
                             const text = el.textContent;
-                            const changeMatch = text.match(/([+-]?\d+(?:\.\d+)?)/);
+                            const changeMatch = text.match(/([+-]?\d*\.?\d+)/);
                             if (changeMatch) {
-                                const parsedChange = parseFloat(changeMatch[1]);
+                                const parsedChange = parseFloat(changeMatch[0]);
                                 if (Math.abs(parsedChange) < 0.5) {
                                     change = parsedChange;
                                     break;
                                 }
                             }
                         }
-                        if (Math.abs(change) < 0.5) break;
+                        if (change !== null) break;
                     }
 
-                    let changePct = 1.23;
-                    const pctSelectors = ['fin-streamer[data-field="regularMarketChangePercent"]', '.change', '[data-reactid]', 'span', '.pct-change'];
+                    let changePct = null;
+                    const pctSelectors = [
+                        'fin-streamer[data-field="regularMarketChangePercent"]',
+                        '[data-test="qsp-price-change-percent"]',
+                        '.change',
+                        '[data-reactid]',
+                        'span',
+                        '.pct-change'
+                    ];
                     for (let selector of pctSelectors) {
                         const elements = doc.querySelectorAll(selector);
                         for (let el of elements) {
                             const text = el.textContent;
-                            const pctMatch = text.match(/([+-]?\d+(?:\.\d+)?)%/);
+                            const pctMatch = text.match(/([+-]?\d*\.?\d+)%/);
                             if (pctMatch) {
                                 const parsedPct = parseFloat(pctMatch[1]);
                                 if (Math.abs(parsedPct) < 5) {
@@ -263,12 +306,20 @@
                                 }
                             }
                         }
-                        if (Math.abs(changePct) < 5) break;
+                        if (changePct !== null) break;
                     }
 
-                    if (Math.abs(changePct) > 5 && etfPreviousClose !== null) {
-                        change = currentPrice - etfPreviousClose;
-                        changePct = (change / etfPreviousClose) * 100;
+                    if (change === null || changePct === null) {
+                        if (etfPreviousClose !== null) {
+                            change = currentPrice - etfPreviousClose;
+                            changePct = (change / etfPreviousClose) * 100;
+                        } else {
+                            document.getElementById('etf-price').textContent = 'Data not currently available';
+                            document.getElementById('etf-indicator').textContent = '';
+                            document.getElementById('etf-last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
+                            document.getElementById('etf-debug').textContent = 'Data source: Fetch failed (check nz.finance.yahoo.com)';
+                            return;
+                        }
                     }
 
                     if (etfPreviousClose === null) {
@@ -288,18 +339,13 @@
                         etfIndicator.className = 'indicator no-change';
                     }
                     document.getElementById('etf-last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
-                    document.getElementById('etf-debug').textContent = foundLive ? 'Data source: Live fetch successful' : 'Data source: Fallback (check nz.finance.yahoo.com)';
+                    document.getElementById('etf-debug').textContent = 'Data source: Live fetch successful';
                 })
                 .catch(error => {
-                    const currentPrice = 3.527;
-                    const change = 0.043;
-                    const changePct = 1.23;
-                    document.getElementById('etf-price').textContent = `NZD $${currentPrice.toFixed(3)}`;
-                    const etfIndicator = document.getElementById('etf-indicator');
-                    etfIndicator.innerHTML = `↑ +NZD $${change.toFixed(3)} (+${changePct.toFixed(2)}%)`;
-                    etfIndicator.className = 'indicator up';
+                    document.getElementById('etf-price').textContent = 'Data not currently available';
+                    document.getElementById('etf-indicator').textContent = '';
                     document.getElementById('etf-last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
-                    document.getElementById('etf-debug').textContent = 'Data source: Fallback (fetch failed, check network or nz.finance.yahoo.com)';
+                    document.getElementById('etf-debug').textContent = 'Data source: Fetch failed (check nz.finance.yahoo.com)';
                     console.error('Error fetching ETF price:', error);
                 });
         }
